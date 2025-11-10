@@ -49,14 +49,14 @@ async function sendAlertEmail(to, lat, lon) {
     const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
-            user: 'arnavp128@gmail.com',
+            user: '2006rajsahil@gmail.com',
             pass: 'rwcd zsap vaij poue '
         }
     });
 
 
     const mailOptions = {
-        from: 'arnavp128@gmail.com',
+        from: '2006rajsahil@gmail.com',
         to,
         subject: '🚨 Emergency Alert!',
         html: `<p>User is in danger. Location: <a href="https://maps.google.com/?q=${lat},${lon}">View on Map</a></p>`
