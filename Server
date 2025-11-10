@@ -1,0 +1,104 @@
+// server.js
+const express = require('express');
+const fs = require('fs');
+const bodyParser = require('body-parser');
+const nodemailer = require('nodemailer');
+const { createObjectCsvWriter } = require('csv-writer');
+
+const app = express();
+const PORT = 3000;
+
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+app.use(express.static('public/'));
+
+// === Emergency Alert API ===
+app.post('/send-alert', async (req, res) => {
+    const { user_id, latitude, longitude } = req.body;
+
+    const contacts = await getContacts(user_id);
+
+    if (!contacts.length) return res.status(404).json({ message: "No contacts found." });
+
+    for (const contact of contacts) {
+        await sendAlertEmail(contact.contact_email, latitude, longitude);
+    }
+
+    await logAlert(user_id, latitude, longitude);
+
+    res.json({ message: "Alert sent to contacts!" });
+});
+
+// === Functions ===
+
+function getContacts(user_id) {
+    return new Promise((resolve) => {
+        const csv = require('csv-parser');
+        const results = [];
+
+        fs.createReadStream('./data/contacts.csv')
+            .pipe(csv())
+            .on('data', (data) => {
+                if (data.user_id === user_id) results.push(data);
+            })
+            .on('end', () => resolve(results));
+    });
+}
+
+async function sendAlertEmail(to, lat, lon) {
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: 'arnavp128@gmail.com',
+            pass: 'rwcd zsap vaij poue '
+        }
+    });
+
+
+    const mailOptions = {
+        from: 'arnavp128@gmail.com',
+        to,
+        subject: '🚨 Emergency Alert!',
+        html: `<p>User is in danger. Location: <a href="https://maps.google.com/?q=${lat},${lon}">View on Map</a></p>`
+    };
+
+    return transporter.sendMail(mailOptions);
+}
+
+function logAlert(user_id, lat, lon) {
+    const alertWriter = createObjectCsvWriter({
+        path: './data/alerts.csv',
+        header: [
+            { id: 'user_id', title: 'user_id' },
+            { id: 'timestamp', title: 'timestamp' },
+            { id: 'latitude', title: 'latitude' },
+            { id: 'longitude', title: 'longitude' },
+            { id: 'alert_sent', title: 'alert_sent' },
+        ],
+        append: true
+    });
+
+    const timestamp = new Date().toISOString();
+
+    return alertWriter.writeRecords([
+        {
+            user_id,
+            timestamp,
+            latitude: lat,
+            longitude: lon,
+            alert_sent: 'Yes'
+        }
+    ]);
+}
+
+// === Start Server ===
+console.log("Starting Smart Women Safety server...");
+
+try {
+    app.listen(PORT, () => {
+        console.log(`✅ Server is running at http://localhost:${PORT}`);
+    });
+} catch (err) {
+    console.error("❌ Server failed to start:", err);
+}
+
