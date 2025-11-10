@@ -1,0 +1,32 @@
+<!-- public/index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Women Safety</title>
+</head>
+<body>
+    <h1>Smart Women Safety</h1>
+    <button onclick="sendAlert()">🚨 Send Emergency Alert</button>
+
+    <script>
+        function sendAlert() {
+            navigator.geolocation.getCurrentPosition(pos => {
+                const data = {
+                    user_id: "1", // hardcoded for now
+                    latitude: pos.coords.latitude,
+                    longitude: pos.coords.longitude
+                };
+
+                fetch('/send-alert', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                })
+                .then(res => res.json())
+                .then(res => alert(res.message));
+            });
+        }
+    </script>
+</body>
+</html>
+
